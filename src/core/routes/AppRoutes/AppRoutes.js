@@ -1,8 +1,9 @@
 import React from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
 
+import { canAccessRoute } from '@core/auth';
 import { BlankLayout, HeaderFooterLayout, LeftMenuLayout } from '@core/layouts';
-import { buildAutoRoutes, hasPermission } from '@core/routes/autoRoutes';
+import { buildAutoRoutes } from '@core/routes/autoRoutes';
 
 const BRAND_LABEL = 'React MUI Kit';
 
@@ -71,10 +72,7 @@ function getAncestorPaths(pathname) {
 function buildLeftMenuTree(routes = []) {
   const menuRoutes = routes
     .filter((route) => route.layout === 'left-menu' && route.leftMenu)
-    .map((route) => ({
-      ...route.leftMenu,
-      routePath: route.path
-    }));
+    .map((route) => route.leftMenu);
 
   const sortedMenuItems = dedupeAndSortItems(menuRoutes);
   const nodeByPath = new Map();
@@ -83,11 +81,9 @@ function buildLeftMenuTree(routes = []) {
     nodeByPath.set(item.path, {
       key: item.path,
       path: item.path,
-      routePath: item.routePath,
       label: item.label,
       icon: item.icon,
       order: item.order,
-      virtual: false,
       children: []
     });
   });
@@ -105,11 +101,9 @@ function buildLeftMenuTree(routes = []) {
       nodeByPath.set(ancestorPath, {
         key: ancestorPath,
         path: null,
-        routePath: null,
         label: toTitleCasePathSegment(ancestorSegment),
         icon: null,
         order: Number.MAX_SAFE_INTEGER,
-        virtual: true,
         children: []
       });
     });
@@ -164,9 +158,15 @@ function buildLeftMenuTree(routes = []) {
   return rootNodes;
 }
 
-function getSafeFallbackPath(routes = [], userPermissions = []) {
+function getSafeFallbackPath(routes = [], ability, isLoggedIn) {
   const accessibleRoutes = routes.filter(
-    (route) => route.path !== '*' && hasPermission(userPermissions, route.permissions)
+    (route) =>
+      route.path !== '*'
+      && canAccessRoute({
+        ability,
+        isLoggedIn,
+        requiredPermissions: route.permissions
+      })
   );
   const rootRoute = accessibleRoutes.find((route) => route.path === '/');
 
@@ -181,8 +181,14 @@ function getSafeFallbackPath(routes = [], userPermissions = []) {
   return '/403';
 }
 
-function renderRouteElement(route, userPermissions, forbiddenPath) {
-  if (!hasPermission(userPermissions, route.permissions)) {
+function renderRouteElement(route, ability, isLoggedIn, forbiddenPath) {
+  if (
+    !canAccessRoute({
+      ability,
+      isLoggedIn,
+      requiredPermissions: route.permissions
+    })
+  ) {
     return <Navigate to={forbiddenPath} replace />;
   }
 
@@ -191,7 +197,7 @@ function renderRouteElement(route, userPermissions, forbiddenPath) {
   return <PageComponent />;
 }
 
-export default function AppRoutes({ mode, onToggleMode, userPermissions = [] }) {
+export default function AppRoutes({ mode, onToggleMode, ability, isLoggedIn }) {
   const routes = React.useMemo(() => buildAutoRoutes(), []);
   const forbiddenPath = routes.find((route) => route.kind === 'forbidden')?.path || '/403';
   const hasNotFoundWildcard = routes.some((route) => route.path === '*' && route.kind === 'not-found');
@@ -208,7 +214,7 @@ export default function AppRoutes({ mode, onToggleMode, userPermissions = [] }) 
     return titleMap;
   }, {});
 
-  const fallbackPath = getSafeFallbackPath(routes, userPermissions);
+  const fallbackPath = getSafeFallbackPath(routes, ability, isLoggedIn);
 
   return (
     <Routes>
@@ -227,7 +233,7 @@ export default function AppRoutes({ mode, onToggleMode, userPermissions = [] }) 
           <Route
             key={route.path}
             path={route.path}
-            element={renderRouteElement(route, userPermissions, forbiddenPath)}
+            element={renderRouteElement(route, ability, isLoggedIn, forbiddenPath)}
           />
         ))}
       </Route>
@@ -247,7 +253,7 @@ export default function AppRoutes({ mode, onToggleMode, userPermissions = [] }) 
           <Route
             key={route.path}
             path={route.path}
-            element={renderRouteElement(route, userPermissions, forbiddenPath)}
+            element={renderRouteElement(route, ability, isLoggedIn, forbiddenPath)}
           />
         ))}
       </Route>
@@ -257,7 +263,7 @@ export default function AppRoutes({ mode, onToggleMode, userPermissions = [] }) 
           <Route
             key={route.path}
             path={route.path}
-            element={renderRouteElement(route, userPermissions, forbiddenPath)}
+            element={renderRouteElement(route, ability, isLoggedIn, forbiddenPath)}
           />
         ))}
       </Route>

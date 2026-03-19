@@ -1,1 +1,1 @@
-export { buildAutoRoutes, hasPermission } from './buildAutoRoutes';
+export { buildAutoRoutes } from './buildAutoRoutes';

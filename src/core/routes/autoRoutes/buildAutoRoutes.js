@@ -301,28 +301,6 @@ function expandAliases(route, aliases) {
   return [route, ...aliasRoutes];
 }
 
-export function hasPermission(userPermissions = [], requiredPermissions = []) {
-  if (!requiredPermissions.length) {
-    return true;
-  }
-
-  const permissionSet = new Set(userPermissions);
-
-  if (permissionSet.has('*')) {
-    return true;
-  }
-
-  return requiredPermissions.every((permission) => {
-    if (permissionSet.has(permission)) {
-      return true;
-    }
-
-    const resource = permission.split(':')[0];
-
-    return permissionSet.has(`${resource}:*`);
-  });
-}
-
 export function buildAutoRoutes() {
   const pageEntries = Object.entries(PAGE_MODULES)
     .filter(([filePath]) => !isRootPagesIndex(filePath))

@@ -12,6 +12,7 @@
     "lint:fix": "node ./node_modules/eslint/bin/eslint.js \"src/**/*.{js,jsx}\" --fix"
   },
   "dependencies": {
+    "@casl/ability": "^6.8.0",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.0",
     "@mui/icons-material": "^7.0.0",
