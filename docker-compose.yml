@@ -1,0 +1,8 @@
+services:
+  react-fe-template:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: react-fe-template
+    ports:
+      - "3000:3000"
