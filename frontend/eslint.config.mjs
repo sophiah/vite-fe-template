@@ -38,6 +38,7 @@ export default [
       'import/resolver': {
         alias: {
           map: [
+            ['@root', './src'],
             ['@core', './src/core'],
             ['@pages', './src/pages']
           ],
@@ -57,6 +58,11 @@ export default [
         {
           groups: ['builtin', 'external', 'internal', 'parent', 'sibling', 'index'],
           pathGroups: [
+            {
+              pattern: '@root/**',
+              group: 'internal',
+              position: 'before'
+            },
             {
               pattern: '@core/**',
               group: 'internal',

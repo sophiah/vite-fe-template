@@ -25,7 +25,7 @@ import PersonRoundedIcon from '@mui/icons-material/PersonRounded';
 import SettingsRoundedIcon from '@mui/icons-material/SettingsRounded';
 import WorkRoundedIcon from '@mui/icons-material/WorkRounded';
 
-import { APP_CONFIG } from '../../../Config';
+import { APP_CONFIG } from '@root/Config';
 import LoginIcon from './subcomponents/LoginIcon';
 
 export default function HeaderNav({

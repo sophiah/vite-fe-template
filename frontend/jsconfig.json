@@ -2,6 +2,7 @@
   "compilerOptions": {
     "baseUrl": "./src",
     "paths": {
+      "@root/*": ["*"],
       "@core/*": ["core/*"],
       "@pages": ["pages/index.js"],
       "@pages/*": ["pages/*"]

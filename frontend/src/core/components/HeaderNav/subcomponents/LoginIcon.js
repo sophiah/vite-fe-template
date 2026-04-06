@@ -3,7 +3,7 @@ import Box from '@mui/material/Box';
 import IconButton from '@mui/material/IconButton';
 import React from 'react';
 
-import { APP_CONFIG } from '../../../../Config';
+import { APP_CONFIG } from '@root/Config';
 
 export default function LoginIcon({
   isLoggedIn = false,

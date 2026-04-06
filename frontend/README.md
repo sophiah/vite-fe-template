@@ -11,6 +11,7 @@ Quick-start template for React + MUI projects with:
 ## Quick Start
 
 ```bash
+cd ..
 make install
 make dev
 ```
@@ -69,11 +70,12 @@ Nested folders:
 ## Commands
 
 ```bash
+cd ..
 make install
 make dev
 make build
-npm run lint
-npm run lint:fix
+make lint
+make lint-fix
 make docker-up
 make docker-down
 make docker-restart

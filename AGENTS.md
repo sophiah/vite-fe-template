@@ -64,14 +64,14 @@ backend:
   root: backend
   status: placeholder
 commands:
-  frontend_install: cd frontend && yarn install
-  frontend_dev: cd frontend && yarn dev
-  frontend_build: cd frontend && yarn build
+  frontend_install: make install
+  frontend_dev: make dev
+  frontend_build: make build
   frontend_preview: cd frontend && yarn preview
-  frontend_lint: cd frontend && yarn lint
-  frontend_lint_fix: cd frontend && yarn lint:fix
-  frontend_docker_up: cd frontend && make docker-up
-  frontend_docker_down: cd frontend && make docker-down
+  frontend_lint: make lint
+  frontend_lint_fix: make lint-fix
+  frontend_docker_up: make docker-up
+  frontend_docker_down: make docker-down
 ```
 
 ## Working Rules For Agents
@@ -111,4 +111,4 @@ commands:
 - `header-footer` and `blank` layout routes should not appear in left menu.
 
 8. Keep lint baseline healthy.
-- Run `cd frontend && yarn lint` before handoff for non-trivial JS/JSX changes.
+- Run `make lint` before handoff for non-trivial JS/JSX changes.

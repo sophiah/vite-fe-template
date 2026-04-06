@@ -1,0 +1,2 @@
+-- SQL bootstrap for local development.
+-- Add tables, indexes, and seed data for auth integration here.

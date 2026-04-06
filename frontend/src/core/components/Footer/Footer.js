@@ -5,7 +5,7 @@ import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import React from 'react';
 
-import { APP_CONFIG } from '../../../Config';
+import { APP_CONFIG } from '@root/Config';
 import { footerSections } from './subcomponents/footerSections';
 
 export default function Footer() {

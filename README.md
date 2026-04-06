@@ -7,10 +7,10 @@ This repository is split into:
 
 ## Frontend
 
-Run frontend commands from the `frontend` directory:
+Run frontend and docker commands from repository root:
 
 ```bash
-cd frontend
-npm install
-npm run dev
+make install
+make dev
+make docker-up
 ```

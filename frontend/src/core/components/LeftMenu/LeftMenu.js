@@ -20,7 +20,7 @@ import Typography from '@mui/material/Typography';
 import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
-import { APP_CONFIG } from '../../../Config';
+import { APP_CONFIG } from '@root/Config';
 import {
   collapsedFlyoutPaperSx,
   collapsedIconRowSx,

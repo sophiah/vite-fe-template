@@ -1,7 +1,7 @@
 import React from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
 
-import { APP_CONFIG } from '../../../Config';
+import { APP_CONFIG } from '@root/Config';
 import { canAccessRoute } from '@core/auth';
 import { BlankLayout, HeaderFooterLayout, LAYOUT, LeftMenuLayout } from '@core/layouts';
 import { buildAutoRoutes } from '@core/routes/autoRoutes';
