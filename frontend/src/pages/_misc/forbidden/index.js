@@ -9,7 +9,9 @@ export const routeMeta = {
   layout: LAYOUT.BLANK,
   order: -2,
   kind: 'forbidden',
-  permissions: [],
+  permission: {
+    public: true
+  },
   leftMenu: false,
   headerNav: false
 };

@@ -11,9 +11,8 @@ Quick-start template for React + MUI projects with:
 ## Quick Start
 
 ```bash
-cd ..
-make install
-make dev
+yarn install
+yarn dev
 ```
 
 Open `http://localhost:3000`.
@@ -38,14 +37,25 @@ export const routeMeta = {
   path: '/my-page', // optional: defaults from folder path
   aliases: ['/legacy-my-page'], // optional extra mappings
   layout: 'left-menu', // left-menu | header-footer | blank
-  permissions: ['my-page:read'], // optional: defaults inferred from path
+  permission: {
+    public: false,
+    auth: true,
+    ability: 'read',
+    subject: 'my-page'
+  },
   leftMenu: { label: 'My Page' }, // optional for left-menu routes
   headerNav: { label: 'My Page' } // optional for top nav
 };
 ```
 
-- If `permissions` is omitted, it is inferred from path (ex: `/orders/list` => `orders:read`).
-- Parent folders can define layer-level `permissions`, `layout`, and `leftMenu` defaults; child pages inherit them automatically.
+- Permission checking is centralized in `src/core/routes/AppRoutes/AppRoutes.js`.
+- Permission is evaluated as a path-hierarchy chain (parent -> child), and all layers must pass.
+- If `permission` is omitted, default is:
+  - `public: false`
+  - `auth: true`
+  - `ability: null`
+  - `subject: null`
+- If `ability` or `subject` is set, route is treated as protected (`public: false`, `auth: true`).
 - Folder names map directly to route paths, including multi-level nesting.
 - Left menu auto-builds a tree from folder paths; routes with sub-pages are collapsible.
 - You can inject current permissions via localStorage key `app.permissions` (JSON array).
@@ -70,12 +80,13 @@ Nested folders:
 ## Commands
 
 ```bash
+cd frontend
+yarn install
+yarn dev
+yarn build
+yarn lint
+yarn lint:fix
 cd ..
-make install
-make dev
-make build
-make lint
-make lint-fix
 make docker-up
 make docker-down
 make docker-restart

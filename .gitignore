@@ -2,3 +2,7 @@ node_modules
 npm-debug.log*
 dist
 .DS_Store
+__pycache__
+.vscode
+.secret
+backend/.secret

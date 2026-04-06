@@ -2,9 +2,16 @@ import React from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
 
 import { APP_CONFIG } from '@root/Config';
-import { canAccessRoute } from '@core/auth';
+
 import { BlankLayout, HeaderFooterLayout, LAYOUT, LeftMenuLayout } from '@core/layouts';
 import { buildAutoRoutes } from '@core/routes/autoRoutes';
+
+const DEFAULT_ROUTE_PERMISSION = Object.freeze({
+  public: false,
+  auth: true,
+  ability: null,
+  subject: null
+});
 
 function dedupeAndSortItems(items = []) {
   const uniqueItemByPath = new Map();
@@ -157,15 +164,111 @@ function buildLeftMenuTree(routes = []) {
   return rootNodes;
 }
 
-function getSafeFallbackPath(routes = [], ability, isLoggedIn) {
+function hasAbilityPermission(ability, action, subject) {
+  if (!ability || !action || !subject) {
+    return false;
+  }
+
+  return (
+    ability.can(action, subject)
+    || ability.can('manage', subject)
+    || ability.can(action, 'all')
+    || ability.can('manage', 'all')
+  );
+}
+
+function normalizePermissionRule(permissionRule) {
+  if (!permissionRule || typeof permissionRule !== 'object') {
+    return { ...DEFAULT_ROUTE_PERMISSION };
+  }
+
+  const normalizedRule = {
+    public: typeof permissionRule.public === 'boolean' ? permissionRule.public : DEFAULT_ROUTE_PERMISSION.public,
+    auth: typeof permissionRule.auth === 'boolean' ? permissionRule.auth : DEFAULT_ROUTE_PERMISSION.auth,
+    ability: typeof permissionRule.ability === 'string' && permissionRule.ability.trim()
+      ? permissionRule.ability.trim()
+      : null,
+    subject: typeof permissionRule.subject === 'string' && permissionRule.subject.trim()
+      ? permissionRule.subject.trim()
+      : null
+  };
+
+  if (normalizedRule.ability || normalizedRule.subject) {
+    normalizedRule.public = false;
+    normalizedRule.auth = true;
+  }
+
+  return normalizedRule;
+}
+
+function canAccessPermissionRule(permissionRule, ability, isLoggedIn) {
+  const normalizedRule = normalizePermissionRule(permissionRule);
+
+  if (normalizedRule.public === true) {
+    return true;
+  }
+
+  if (normalizedRule.auth === true && !isLoggedIn) {
+    return false;
+  }
+
+  const hasAbilityConstraint = Boolean(normalizedRule.ability || normalizedRule.subject);
+  if (hasAbilityConstraint) {
+    if (!isLoggedIn) {
+      return false;
+    }
+
+    if (!normalizedRule.ability || !normalizedRule.subject) {
+      return false;
+    }
+
+    return hasAbilityPermission(ability, normalizedRule.ability, normalizedRule.subject);
+  }
+
+  if (normalizedRule.public === false && normalizedRule.auth !== true) {
+    return false;
+  }
+
+  return true;
+}
+
+function buildPermissionChainByPath(routes = []) {
+  const routeByPath = new Map();
+
+  routes.forEach((route) => {
+    if (!routeByPath.has(route.path)) {
+      routeByPath.set(route.path, route);
+    }
+  });
+
+  const permissionChainByPath = new Map();
+
+  routes.forEach((route) => {
+    const lineagePaths = [...getAncestorPaths(route.path), route.path].filter((path) => routeByPath.has(path));
+    const permissionChain = lineagePaths
+      .map((path) => normalizePermissionRule(routeByPath.get(path)?.permission));
+
+    permissionChainByPath.set(route.path, permissionChain);
+  });
+
+  return permissionChainByPath;
+}
+
+function canAccessRoute(route, ability, isLoggedIn, permissionChainByPath) {
+  const permissionChain = permissionChainByPath.get(route.path) || [];
+
+  if (!permissionChain.length) {
+    return true;
+  }
+
+  return permissionChain.every((permissionRule) => canAccessPermissionRule(permissionRule, ability, isLoggedIn));
+}
+
+function getSafeFallbackPath(routes = [], ability, isLoggedIn, permissionChainByPath) {
   const accessibleRoutes = routes.filter(
     (route) =>
       route.path !== '*'
-      && canAccessRoute({
-        ability,
-        isLoggedIn,
-        requiredPermissions: route.permissions
-      })
+      && canAccessRoute(route, ability, isLoggedIn, permissionChainByPath)
   );
   const rootRoute = accessibleRoutes.find((route) => route.path === '/');
 
@@ -197,7 +300,9 @@ function getLayoutProps(layoutType, layoutContext) {
     pageTitleMap,
     mode,
     onToggleMode,
-    isLoggedIn
+    isLoggedIn,
+    authUser,
+    onLogout
   } = layoutContext;
 
   if (layoutType === LAYOUT.LEFT_MENU) {
@@ -207,7 +312,9 @@ function getLayoutProps(layoutType, layoutContext) {
       pageTitleMap,
       mode,
       onToggleMode,
-      isLoggedIn
+      isLoggedIn,
+      authUser,
+      onLogout
     };
   }
 
@@ -218,21 +325,17 @@ function getLayoutProps(layoutType, layoutContext) {
       pageTitleMap,
       mode,
       onToggleMode,
-      isLoggedIn
+      isLoggedIn,
+      authUser,
+      onLogout
     };
   }
 
   return {};
 }
 
-function renderRouteElement(route, ability, isLoggedIn, forbiddenPath, layoutContext) {
-  if (
-    !canAccessRoute({
-      ability,
-      isLoggedIn,
-      requiredPermissions: route.permissions
-    })
-  ) {
+function renderRouteElement(route, ability, isLoggedIn, forbiddenPath, layoutContext, permissionChainByPath) {
+  if (!canAccessRoute(route, ability, isLoggedIn, permissionChainByPath)) {
     return <Navigate to={forbiddenPath} replace />;
   }
 
@@ -246,32 +349,39 @@ function renderRouteElement(route, ability, isLoggedIn, forbiddenPath, layoutCon
   );
 }
 
-export default function AppRoutes({ mode, onToggleMode, ability, isLoggedIn }) {
+export default function AppRoutes({ mode, onToggleMode, ability, isLoggedIn, authUser, onLogout }) {
   const routes = React.useMemo(() => buildAutoRoutes(), []);
+  const permissionChainByPath = React.useMemo(() => buildPermissionChainByPath(routes), [routes]);
   const forbiddenPath = routes.find((route) => route.kind === 'forbidden')?.path || '/403';
   const hasNotFoundWildcard = routes.some((route) => route.path === '*' && route.kind === 'not-found');
+  const accessibleRoutes = React.useMemo(
+    () => routes.filter((route) => canAccessRoute(route, ability, isLoggedIn, permissionChainByPath)),
+    [routes, ability, isLoggedIn, permissionChainByPath]
+  );
 
-  const leftMenuItems = React.useMemo(() => buildLeftMenuTree(routes), [routes]);
+  const leftMenuItems = React.useMemo(() => buildLeftMenuTree(accessibleRoutes), [accessibleRoutes]);
   const headerNavItems = React.useMemo(
-    () => dedupeAndSortItems(routes.map((route) => route.headerNav).filter(Boolean)),
-    [routes]
+    () => dedupeAndSortItems(accessibleRoutes.map((route) => route.headerNav).filter(Boolean)),
+    [accessibleRoutes]
   );
   const pageTitleMap = React.useMemo(
-    () => routes.reduce((titleMap, route) => {
+    () => accessibleRoutes.reduce((titleMap, route) => {
       titleMap[route.path] = route.title;
       return titleMap;
     }, {}),
-    [routes]
+    [accessibleRoutes]
   );
 
-  const fallbackPath = getSafeFallbackPath(routes, ability, isLoggedIn);
+  const fallbackPath = getSafeFallbackPath(routes, ability, isLoggedIn, permissionChainByPath);
   const layoutContext = {
     leftMenuItems,
     headerNavItems,
     pageTitleMap,
     mode,
     onToggleMode,
-    isLoggedIn
+    isLoggedIn,
+    authUser,
+    onLogout
   };
 
   return (
@@ -280,7 +390,7 @@ export default function AppRoutes({ mode, onToggleMode, ability, isLoggedIn }) {
         <Route
           key={`${route.path}:${route.kind || 'page'}`}
           path={route.path}
-          element={renderRouteElement(route, ability, isLoggedIn, forbiddenPath, layoutContext)}
+          element={renderRouteElement(route, ability, isLoggedIn, forbiddenPath, layoutContext, permissionChainByPath)}
         />
       ))}
 

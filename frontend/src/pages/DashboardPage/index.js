@@ -8,7 +8,9 @@ export const routeMeta = {
   title: 'Dashboard Demo',
   layout: LAYOUT.LEFT_MENU,
   order: 0,
-  permissions: [],
+  permission: {
+    public: true
+  },
   leftMenu: {
     label: 'Dashboard Demo',
     icon: DashboardRoundedIcon,

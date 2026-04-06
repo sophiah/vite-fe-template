@@ -83,53 +83,30 @@ function normalizeAliases(routeMeta = {}) {
     .filter(Boolean);
 }
 
-function inferPermissionsFromPath(pathname) {
-  if (pathname === '*' || pathname === '/') {
-    return [];
-  }
-
-  const normalizedPath = pathname.replace(/^\/+|\/+$/g, '');
-
-  if (!normalizedPath) {
-    return [];
-  }
-
-  const firstSegment = normalizedPath.split('/')[0];
-  const resource = firstSegment
-    .replace(/[^a-zA-Z0-9-]/g, '')
-    .trim();
-
-  if (!resource) {
-    return [];
-  }
-
-  return [`${resource}:read`];
-}
-
-function readExplicitPermissions(meta = {}) {
-  const rawPermissions = meta.permissions ?? meta.permission;
-
-  if (rawPermissions === undefined) {
+function normalizePermission(permissionConfig) {
+  if (!permissionConfig || typeof permissionConfig !== 'object' || Array.isArray(permissionConfig)) {
     return null;
   }
 
-  if (rawPermissions === false || rawPermissions === null) {
-    return false;
+  const normalizedPermission = {};
+
+  if (typeof permissionConfig.public === 'boolean') {
+    normalizedPermission.public = permissionConfig.public;
   }
 
-  if (Array.isArray(rawPermissions)) {
-    return rawPermissions.filter(Boolean);
+  if (typeof permissionConfig.auth === 'boolean') {
+    normalizedPermission.auth = permissionConfig.auth;
   }
 
-  if (typeof rawPermissions === 'string' && rawPermissions.trim()) {
-    return [rawPermissions.trim()];
+  if (typeof permissionConfig.ability === 'string' && permissionConfig.ability.trim()) {
+    normalizedPermission.ability = permissionConfig.ability.trim();
   }
 
-  return [];
-}
+  if (typeof permissionConfig.subject === 'string' && permissionConfig.subject.trim()) {
+    normalizedPermission.subject = permissionConfig.subject.trim();
+  }
 
-function dedupeList(values = []) {
-  return [...new Set(values)];
+  return Object.keys(normalizedPermission).length ? normalizedPermission : null;
 }
 
 function getAncestorFolderPaths(folderPath) {
@@ -179,41 +156,6 @@ function normalizeLeftMenuConfig(leftMenuConfig) {
   }
 
   return {};
-}
-
-function resolvePermissions(pathname, routeMeta, ancestorMetas) {
-  let inheritedPermissions = [];
-
-  ancestorMetas.forEach((ancestorMeta) => {
-    const ancestorPermissions = readExplicitPermissions(ancestorMeta);
-
-    if (ancestorPermissions === null) {
-      return;
-    }
-
-    if (ancestorPermissions === false) {
-      inheritedPermissions = [];
-      return;
-    }
-
-    inheritedPermissions = dedupeList([...inheritedPermissions, ...ancestorPermissions]);
-  });
-
-  const ownPermissions = readExplicitPermissions(routeMeta);
-
-  if (ownPermissions === false) {
-    return [];
-  }
-
-  if (Array.isArray(ownPermissions)) {
-    return dedupeList([...inheritedPermissions, ...ownPermissions]);
-  }
-
-  if (inheritedPermissions.length) {
-    return inheritedPermissions;
-  }
-
-  return inferPermissionsFromPath(pathname);
 }
 
 function resolveLeftMenu(route, routeMeta, ancestorMetas) {
@@ -351,7 +293,7 @@ export function buildAutoRoutes() {
       order,
       kind: routeMeta.kind,
       title: routeMeta.title || createTitleFromPath(path),
-      permissions: resolvePermissions(path, routeMeta, ancestorMetas),
+      permission: normalizePermission(routeMeta.permission),
       component: PageComponent
     };
 

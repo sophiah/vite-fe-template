@@ -11,6 +11,8 @@ export default function LeftMenuLayout({
   brandLabel,
   menuItems,
   isLoggedIn,
+  authUser,
+  onLogout,
   mode,
   onToggleMode,
   drawerWidth = DEFAULT_DRAWER_WIDTH,
@@ -47,6 +49,8 @@ export default function LeftMenuLayout({
       >
         <HeaderNav
           isLoggedIn={isLoggedIn}
+          authUser={authUser}
+          onLogout={onLogout}
           mode={mode}
           onToggleMode={onToggleMode}
           sticky

@@ -1,3 +1,12 @@
+import CloseRoundedIcon from '@mui/icons-material/CloseRounded';
+import DarkModeRoundedIcon from '@mui/icons-material/DarkModeRounded';
+import GoogleIcon from '@mui/icons-material/Google';
+import HomeRoundedIcon from '@mui/icons-material/HomeRounded';
+import LightModeRoundedIcon from '@mui/icons-material/LightModeRounded';
+import LogoutRoundedIcon from '@mui/icons-material/LogoutRounded';
+import PersonRoundedIcon from '@mui/icons-material/PersonRounded';
+import SettingsRoundedIcon from '@mui/icons-material/SettingsRounded';
+import WorkRoundedIcon from '@mui/icons-material/WorkRounded';
 import AppBar from '@mui/material/AppBar';
 import Avatar from '@mui/material/Avatar';
 import Box from '@mui/material/Box';
@@ -10,26 +19,20 @@ import ListItemButton from '@mui/material/ListItemButton';
 import ListItemIcon from '@mui/material/ListItemIcon';
 import ListItemText from '@mui/material/ListItemText';
 import Stack from '@mui/material/Stack';
+import { alpha } from '@mui/material/styles';
 import Toolbar from '@mui/material/Toolbar';
 import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
-import { alpha } from '@mui/material/styles';
 import React from 'react';
-import CloseRoundedIcon from '@mui/icons-material/CloseRounded';
-import DarkModeRoundedIcon from '@mui/icons-material/DarkModeRounded';
-import GoogleIcon from '@mui/icons-material/Google';
-import HomeRoundedIcon from '@mui/icons-material/HomeRounded';
-import LightModeRoundedIcon from '@mui/icons-material/LightModeRounded';
-import LogoutRoundedIcon from '@mui/icons-material/LogoutRounded';
-import PersonRoundedIcon from '@mui/icons-material/PersonRounded';
-import SettingsRoundedIcon from '@mui/icons-material/SettingsRounded';
-import WorkRoundedIcon from '@mui/icons-material/WorkRounded';
 
 import { APP_CONFIG } from '@root/Config';
+
 import LoginIcon from './subcomponents/LoginIcon';
 
 export default function HeaderNav({
   isLoggedIn = false,
+  authUser = null,
+  onLogout = async () => {},
   userAvatarSrc = APP_CONFIG.USER_AVATAR_SRC,
   userAvatarAlt = APP_CONFIG.USER_AVATAR_ALT,
   mode = 'light',
@@ -37,6 +40,11 @@ export default function HeaderNav({
   sticky = true
 }) {
   const [rightMenuOpen, setRightMenuOpen] = React.useState(false);
+  const [isLoggingOut, setIsLoggingOut] = React.useState(false);
+  const resolvedDisplayName = authUser?.displayName || APP_CONFIG.USER_DISPLAY_NAME;
+  const resolvedEmail = authUser?.email || APP_CONFIG.USER_EMAIL;
+  const resolvedAvatarSrc = authUser?.avatarUrl || userAvatarSrc;
+  const resolvedAvatarAlt = resolvedDisplayName || userAvatarAlt;
 
   const handleToggleMenu = () => {
     setRightMenuOpen((open) => !open);
@@ -45,6 +53,31 @@ export default function HeaderNav({
   const handleCloseMenu = () => {
     setRightMenuOpen(false);
   };
+
+  const handleGoogleAuthEntry = React.useCallback(() => {
+    const loginPath = APP_CONFIG.SSO_GOOGLE_LOGIN_PATH;
+    const nextPath = window.location.pathname + window.location.search;
+    const callbackUrl = `${loginPath}?next=${encodeURIComponent(nextPath)}`;
+
+    handleCloseMenu();
+    window.location.assign(callbackUrl);
+  }, []);
+
+  const handleLogout = React.useCallback(async () => {
+    if (isLoggingOut) {
+      return;
+    }
+
+    setIsLoggingOut(true);
+
+    try {
+      await onLogout();
+      handleCloseMenu();
+      window.location.assign('/');
+    } finally {
+      setIsLoggingOut(false);
+    }
+  }, [isLoggingOut, onLogout]);
 
   return (
     <>
@@ -66,8 +99,8 @@ export default function HeaderNav({
         <Toolbar sx={{ minHeight: { xs: 48, sm: 52 }, justifyContent: 'flex-end' }}>
           <LoginIcon
             isLoggedIn={isLoggedIn}
-            userAvatarSrc={userAvatarSrc}
-            userAvatarAlt={userAvatarAlt}
+            userAvatarSrc={resolvedAvatarSrc}
+            userAvatarAlt={resolvedAvatarAlt}
             onClick={handleToggleMenu}
           />
         </Toolbar>
@@ -105,22 +138,22 @@ export default function HeaderNav({
             <>
               <Stack alignItems="center" spacing={1.25} sx={{ pt: 2, pb: 2.5 }}>
                 <Avatar
-                  src={userAvatarSrc}
-                  alt={userAvatarAlt}
+                  src={resolvedAvatarSrc}
+                  alt={resolvedAvatarAlt}
                   sx={{
                     width: 88,
                     height: 88,
                     border: (theme) => `2px solid ${theme.palette.success.main}`
                   }}
                 >
-                  {(userAvatarAlt || 'U').charAt(0).toUpperCase()}
+                  {(resolvedAvatarAlt || 'U').charAt(0).toUpperCase()}
                 </Avatar>
 
                 <Typography variant="h6" sx={{ fontWeight: 700 }}>
-                  {APP_CONFIG.USER_DISPLAY_NAME}
+                  {resolvedDisplayName}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                  {APP_CONFIG.USER_EMAIL}
+                  {resolvedEmail}
                 </Typography>
               </Stack>
 
@@ -159,8 +192,10 @@ export default function HeaderNav({
                 variant="outlined"
                 startIcon={<LogoutRoundedIcon />}
                 sx={{ borderRadius: 2.5, mt: 1 }}
+                onClick={handleLogout}
+                disabled={isLoggingOut}
               >
-                Logout
+                {isLoggingOut ? 'Logging out...' : 'Logout'}
               </Button>
             </>
           ) : (
@@ -171,10 +206,16 @@ export default function HeaderNav({
               <Typography variant="body2" color="text.secondary">
                 Sign in to continue with your account.
               </Typography>
-              <Button fullWidth variant="contained" startIcon={<GoogleIcon />} sx={{ mt: 1 }}>
+              <Button
+                fullWidth
+                variant="contained"
+                startIcon={<GoogleIcon />}
+                sx={{ mt: 1 }}
+                onClick={handleGoogleAuthEntry}
+              >
                 Login
               </Button>
-              <Button fullWidth variant="outlined" startIcon={<GoogleIcon />}>
+              <Button fullWidth variant="outlined" startIcon={<GoogleIcon />} onClick={handleGoogleAuthEntry}>
                 Signup
               </Button>
             </Stack>

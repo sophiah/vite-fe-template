@@ -7,7 +7,12 @@ export const routeMeta = {
   title: 'Category 1',
   order: 100,
   layout: LAYOUT.LEFT_MENU,
-  permissions: ['category1:read'],
+  permission: {
+    public: false,
+    auth: true,
+    ability: 'read',
+    subject: 'category1'
+  },
   leftMenu: {
     label: 'Category 1',
     icon: FolderRoundedIcon,

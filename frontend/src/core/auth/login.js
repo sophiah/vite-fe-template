@@ -7,7 +7,7 @@ import {
   writeJSONToStorage
 } from './storage';
 
-const DEFAULT_LOGIN_STATE = true;
+const DEFAULT_LOGIN_STATE = false;
 const DEFAULT_PERMISSIONS = ['*'];
 
 function normalizePermissions(permissions) {

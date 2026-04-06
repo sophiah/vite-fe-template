@@ -9,7 +9,9 @@ export const routeMeta = {
   layout: LAYOUT.BLANK,
   order: -1,
   kind: 'not-found',
-  permissions: [],
+  permission: {
+    public: true
+  },
   leftMenu: false,
   headerNav: false
 };

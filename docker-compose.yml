@@ -34,11 +34,24 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     container_name: backend
+    env_file:
+      - path: ./.secret
+        required: false
+      - path: ./backend/.secret
+        required: false
     environment:
       - DATABASE_URL=postgresql://app:app@postgres:5432/app
+      - APP_AUTH_SECRET=dev-self-signed-secret
+      - COOKIE_DOMAIN=localhost
+      - COOKIE_SECURE=true
+      - FRONTEND_AUTH_SUCCESS_URL=https://localhost:8000/
+      - FRONTEND_AUTH_ERROR_URL=https://localhost:8000/?authError=1
+      - WATCHFILES_FORCE_POLLING=true
     depends_on:
       postgres:
         condition: service_healthy
+    volumes:
+      - ./backend/src:/workspace
 
   nginx:
     image: nginx:1.27-alpine

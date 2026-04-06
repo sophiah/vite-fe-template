@@ -68,18 +68,6 @@ export function canByPermission(ability, requiredPermission) {
   );
 }
 
-export function canAccessRoute({ ability, isLoggedIn: loggedIn, requiredPermissions = [] }) {
-  if (!requiredPermissions.length) {
-    return true;
-  }
-
-  if (!loggedIn) {
-    return false;
-  }
-
-  return requiredPermissions.every((permission) => canByPermission(ability, permission));
-}
-
 export function readAuthState() {
   initializeMockAuth();
 

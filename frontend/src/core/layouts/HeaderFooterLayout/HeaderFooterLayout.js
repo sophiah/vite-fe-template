@@ -6,13 +6,22 @@ import { Footer, HeaderNav } from '@core/components';
 
 export default function HeaderFooterLayout({
   isLoggedIn,
+  authUser,
+  onLogout,
   mode,
   onToggleMode,
   children
 }) {
   return (
     <Box sx={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-      <HeaderNav isLoggedIn={isLoggedIn} mode={mode} onToggleMode={onToggleMode} sticky />
+      <HeaderNav
+        isLoggedIn={isLoggedIn}
+        authUser={authUser}
+        onLogout={onLogout}
+        mode={mode}
+        onToggleMode={onToggleMode}
+        sticky
+      />
       <Box component="main" sx={{ px: { xs: 2, md: 5 }, py: { xs: 2, md: 3 }, flexGrow: 1 }}>
         {children || <Outlet />}
       </Box>

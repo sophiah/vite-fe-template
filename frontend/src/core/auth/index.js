@@ -1,5 +1,5 @@
 export { default as AuthDebugPanel } from './AuthDebugPanel';
-export { buildAbilityFromPermissions, canAccessRoute, canByPermission, readAuthState } from './ability';
+export { buildAbilityFromPermissions, canByPermission, readAuthState } from './ability';
 export {
   getStoredPermissions,
   initializeMockAuth,
