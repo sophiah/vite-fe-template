@@ -1,10 +1,12 @@
+import { LAYOUT } from '@core/layouts';
+
 export { default } from './ForbiddenPage';
 
 export const routeMeta = {
   path: '/403',
   aliases: ['/forbidden'],
   title: 'Access Denied',
-  layout: 'blank',
+  layout: LAYOUT.BLANK,
   order: -2,
   kind: 'forbidden',
   permissions: [],

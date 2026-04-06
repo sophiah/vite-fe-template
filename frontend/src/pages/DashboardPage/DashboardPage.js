@@ -18,7 +18,7 @@ import { monthlyBars } from './subcomponents/overviewData';
 export default function DashboardPage() {
   return (
     <Grid container spacing={2.25}>
-      <Grid item xs={12} lg={8}>
+      <Grid size={{ xs: 12, lg: 8 }}>
         <AppBox title="Welcome back, Product Team" subtitle="Template dashboard page" gradient>
           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={3} divider={<Divider orientation="vertical" flexItem />}>
             <Box>
@@ -40,7 +40,7 @@ export default function DashboardPage() {
           </Stack>
         </AppBox>
       </Grid>
-      <Grid item xs={12} sm={6} lg={2}>
+      <Grid size={{ xs: 12, sm: 6, lg: 2 }}>
         <AppCard
           title="Expense"
           value="$10,230"
@@ -49,7 +49,7 @@ export default function DashboardPage() {
           icon={<DonutLargeRoundedIcon />}
         />
       </Grid>
-      <Grid item xs={12} sm={6} lg={2}>
+      <Grid size={{ xs: 12, sm: 6, lg: 2 }}>
         <AppCard
           title="Sales"
           value="$65,432"
@@ -59,7 +59,7 @@ export default function DashboardPage() {
         />
       </Grid>
 
-      <Grid item xs={12} md={7}>
+      <Grid size={{ xs: 12, md: 7 }}>
         <AppBox title="Revenue Updates" subtitle="Overview of profit">
           <Stack direction="row" alignItems="flex-end" spacing={1.2} sx={{ mt: 2, minHeight: 180 }}>
             {monthlyBars.map((height, index) => (
@@ -76,7 +76,7 @@ export default function DashboardPage() {
           </Stack>
         </AppBox>
       </Grid>
-      <Grid item xs={12} md={5}>
+      <Grid size={{ xs: 12, md: 5 }}>
         <AppBox title="Sales Overview" subtitle="Every month">
           <Stack direction="row" spacing={2} alignItems="center" sx={{ mt: 1 }}>
             <Avatar sx={{ bgcolor: 'primary.main', width: 48, height: 48 }}>

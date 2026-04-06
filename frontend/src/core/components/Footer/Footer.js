@@ -5,6 +5,7 @@ import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import React from 'react';
 
+import { APP_CONFIG } from '../../../Config';
 import { footerSections } from './subcomponents/footerSections';
 
 export default function Footer() {
@@ -12,7 +13,7 @@ export default function Footer() {
     <Box component="footer" sx={{ mt: 4, px: { xs: 2, md: 5 }, pb: 3 }}>
       <Grid container spacing={3} sx={{ mb: 3 }}>
         {footerSections.map((section) => (
-          <Grid item xs={12} sm={4} key={section.title}>
+          <Grid size={{ xs: 12, sm: 4 }} key={section.title}>
             <Typography variant="h6" sx={{ mb: 1.25 }}>
               {section.title}
             </Typography>
@@ -30,10 +31,10 @@ export default function Footer() {
       <Divider sx={{ mb: 2 }} />
       <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" spacing={1}>
         <Typography variant="body2" color="text.secondary">
-          All rights reserved by React MUI Kit.
+          {APP_CONFIG.FOOTER_COPYRIGHT_TEXT}
         </Typography>
         <Typography variant="body2" color="text.secondary">
-          Produced by Template Team.
+          {APP_CONFIG.FOOTER_PRODUCER_TEXT}
         </Typography>
       </Stack>
     </Box>

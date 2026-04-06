@@ -1,6 +1,8 @@
+import { LAYOUT, normalizeLayout } from '@core/layouts/layoutEnum';
+
 const PAGE_MODULES = import.meta.glob('/src/pages/**/index.{js,jsx}', { eager: true });
 
-const DEFAULT_LAYOUT = 'left-menu';
+const DEFAULT_LAYOUT = LAYOUT.LEFT_MENU;
 const DEFAULT_ROUTE_ORDER = 1000;
 
 function toKebabCase(value) {
@@ -215,7 +217,7 @@ function resolvePermissions(pathname, routeMeta, ancestorMetas) {
 }
 
 function resolveLeftMenu(route, routeMeta, ancestorMetas) {
-  if (route.layout !== 'left-menu') {
+  if (route.layout !== LAYOUT.LEFT_MENU) {
     return null;
   }
 
@@ -258,7 +260,7 @@ function normalizeHeaderNav(headerNavConfig, route) {
     };
   }
 
-  if (route.layout === 'header-footer') {
+  if (route.layout === LAYOUT.HEADER_FOOTER) {
     return {
       label: route.title,
       path: route.path,
@@ -326,7 +328,6 @@ export function buildAutoRoutes() {
     const ancestorMetas = getAncestorMetas(folderPath, metaByFolder);
     const autoPath = normalizePathFromFolderPath(folderPath);
     const path = normalizePath(routeMeta.path, autoPath);
-    const inheritedLayout = getNearestAncestorValue(ancestorMetas, (meta) => meta.layout);
     const inheritedOrder = getNearestAncestorValue(ancestorMetas, (meta) => {
       if (typeof meta.order === 'number') {
         return meta.order;
@@ -339,9 +340,14 @@ export function buildAutoRoutes() {
       ? routeMeta.order
       : (inheritedOrder ?? DEFAULT_ROUTE_ORDER);
 
+    const inheritedLayout = normalizeLayout(
+      getNearestAncestorValue(ancestorMetas, (meta) => meta.layout),
+      DEFAULT_LAYOUT
+    );
+
     const route = {
       path,
-      layout: routeMeta.layout || inheritedLayout || DEFAULT_LAYOUT,
+      layout: normalizeLayout(routeMeta.layout, inheritedLayout),
       order,
       kind: routeMeta.kind,
       title: routeMeta.title || createTitleFromPath(path),

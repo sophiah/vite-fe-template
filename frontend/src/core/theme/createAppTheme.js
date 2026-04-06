@@ -85,6 +85,28 @@ export const createAppTheme = (mode = 'light') => {
           }
         }
       },
+      MuiList: {
+        variants: [
+          {
+            props: { variant: 'left-menu' },
+            style: {
+              paddingTop: 12,
+              paddingBottom: 12,
+              paddingLeft: 12,
+              paddingRight: 12
+            }
+          },
+          {
+            props: { variant: 'left-menu-collapsed' },
+            style: {
+              paddingTop: 12,
+              paddingBottom: 12,
+              paddingLeft: 6,
+              paddingRight: 6
+            }
+          }
+        ]
+      },
       MuiPaper: {
         styleOverrides: {
           root: {

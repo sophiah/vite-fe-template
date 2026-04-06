@@ -1,6 +1,6 @@
 import Box from '@mui/material/Box';
 import React from 'react';
-import { Outlet, useLocation } from 'react-router-dom';
+import { Outlet } from 'react-router-dom';
 
 import { HeaderNav, LeftMenu } from '@core/components';
 
@@ -10,13 +10,13 @@ const DEFAULT_COLLAPSED_WIDTH = 88;
 export default function LeftMenuLayout({
   brandLabel,
   menuItems,
-  pageTitleMap,
+  isLoggedIn,
   mode,
   onToggleMode,
   drawerWidth = DEFAULT_DRAWER_WIDTH,
-  collapsedWidth = DEFAULT_COLLAPSED_WIDTH
+  collapsedWidth = DEFAULT_COLLAPSED_WIDTH,
+  children
 }) {
-  const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
   const [desktopMenuOpen, setDesktopMenuOpen] = React.useState(true);
 
@@ -46,15 +46,14 @@ export default function LeftMenuLayout({
         }}
       >
         <HeaderNav
-          brandLabel={brandLabel}
-          pageTitle={pageTitleMap[location.pathname]}
+          isLoggedIn={isLoggedIn}
           mode={mode}
           onToggleMode={onToggleMode}
           sticky
         />
 
         <Box component="main" sx={{ px: { xs: 2, md: 3 }, py: { xs: 2, md: 3 } }}>
-          <Outlet />
+          {children || <Outlet />}
         </Box>
       </Box>
     </Box>

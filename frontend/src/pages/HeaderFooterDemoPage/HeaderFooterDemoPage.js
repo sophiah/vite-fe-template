@@ -9,7 +9,7 @@ import { featureCards } from './subcomponents/featureData';
 export default function HeaderFooterDemoPage() {
   return (
     <Grid container spacing={2.25}>
-      <Grid item xs={12}>
+      <Grid size={12}>
         <AppBox
           title="Header + Footer Layout"
           subtitle="Use this for marketing or public pages where sidebar is unnecessary."
@@ -22,7 +22,7 @@ export default function HeaderFooterDemoPage() {
       </Grid>
 
       {featureCards.map((card) => (
-        <Grid item xs={12} md={4} key={card.title}>
+        <Grid size={{ xs: 12, md: 4 }} key={card.title}>
           <AppCard title={card.title} subtitle={card.description} value="Ready" />
         </Grid>
       ))}

@@ -1,11 +1,10 @@
 import React from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
 
+import { APP_CONFIG } from '../../../Config';
 import { canAccessRoute } from '@core/auth';
-import { BlankLayout, HeaderFooterLayout, LeftMenuLayout } from '@core/layouts';
+import { BlankLayout, HeaderFooterLayout, LAYOUT, LeftMenuLayout } from '@core/layouts';
 import { buildAutoRoutes } from '@core/routes/autoRoutes';
-
-const BRAND_LABEL = 'React MUI Kit';
 
 function dedupeAndSortItems(items = []) {
   const uniqueItemByPath = new Map();
@@ -71,7 +70,7 @@ function getAncestorPaths(pathname) {
 
 function buildLeftMenuTree(routes = []) {
   const menuRoutes = routes
-    .filter((route) => route.layout === 'left-menu' && route.leftMenu)
+    .filter((route) => route.layout === LAYOUT.LEFT_MENU && route.leftMenu)
     .map((route) => route.leftMenu);
 
   const sortedMenuItems = dedupeAndSortItems(menuRoutes);
@@ -181,7 +180,52 @@ function getSafeFallbackPath(routes = [], ability, isLoggedIn) {
   return '/403';
 }
 
-function renderRouteElement(route, ability, isLoggedIn, forbiddenPath) {
+const LAYOUT_COMPONENT_BY_TYPE = {
+  [LAYOUT.LEFT_MENU]: LeftMenuLayout,
+  [LAYOUT.HEADER_FOOTER]: HeaderFooterLayout,
+  [LAYOUT.BLANK]: BlankLayout
+};
+
+function getLayoutComponent(layoutType) {
+  return LAYOUT_COMPONENT_BY_TYPE[layoutType] || LeftMenuLayout;
+}
+
+function getLayoutProps(layoutType, layoutContext) {
+  const {
+    leftMenuItems,
+    headerNavItems,
+    pageTitleMap,
+    mode,
+    onToggleMode,
+    isLoggedIn
+  } = layoutContext;
+
+  if (layoutType === LAYOUT.LEFT_MENU) {
+    return {
+      brandLabel: APP_CONFIG.BRAND_LABEL,
+      menuItems: leftMenuItems,
+      pageTitleMap,
+      mode,
+      onToggleMode,
+      isLoggedIn
+    };
+  }
+
+  if (layoutType === LAYOUT.HEADER_FOOTER) {
+    return {
+      brandLabel: APP_CONFIG.BRAND_LABEL,
+      navItems: headerNavItems,
+      pageTitleMap,
+      mode,
+      onToggleMode,
+      isLoggedIn
+    };
+  }
+
+  return {};
+}
+
+function renderRouteElement(route, ability, isLoggedIn, forbiddenPath, layoutContext) {
   if (
     !canAccessRoute({
       ability,
@@ -192,9 +236,14 @@ function renderRouteElement(route, ability, isLoggedIn, forbiddenPath) {
     return <Navigate to={forbiddenPath} replace />;
   }
 
+  const LayoutComponent = getLayoutComponent(route.layout);
   const PageComponent = route.component;
 
-  return <PageComponent />;
+  return (
+    <LayoutComponent {...getLayoutProps(route.layout, layoutContext)}>
+      <PageComponent />
+    </LayoutComponent>
+  );
 }
 
 export default function AppRoutes({ mode, onToggleMode, ability, isLoggedIn }) {
@@ -202,71 +251,38 @@ export default function AppRoutes({ mode, onToggleMode, ability, isLoggedIn }) {
   const forbiddenPath = routes.find((route) => route.kind === 'forbidden')?.path || '/403';
   const hasNotFoundWildcard = routes.some((route) => route.path === '*' && route.kind === 'not-found');
 
-  const leftMenuRoutes = routes.filter((route) => route.layout === 'left-menu');
-  const headerFooterRoutes = routes.filter((route) => route.layout === 'header-footer');
-  const blankRoutes = routes.filter((route) => route.layout === 'blank');
-
   const leftMenuItems = React.useMemo(() => buildLeftMenuTree(routes), [routes]);
-  const headerNavItems = dedupeAndSortItems(routes.map((route) => route.headerNav).filter(Boolean));
-
-  const pageTitleMap = routes.reduce((titleMap, route) => {
-    titleMap[route.path] = route.title;
-    return titleMap;
-  }, {});
+  const headerNavItems = React.useMemo(
+    () => dedupeAndSortItems(routes.map((route) => route.headerNav).filter(Boolean)),
+    [routes]
+  );
+  const pageTitleMap = React.useMemo(
+    () => routes.reduce((titleMap, route) => {
+      titleMap[route.path] = route.title;
+      return titleMap;
+    }, {}),
+    [routes]
+  );
 
   const fallbackPath = getSafeFallbackPath(routes, ability, isLoggedIn);
+  const layoutContext = {
+    leftMenuItems,
+    headerNavItems,
+    pageTitleMap,
+    mode,
+    onToggleMode,
+    isLoggedIn
+  };
 
   return (
     <Routes>
-      <Route
-        element={
-          <LeftMenuLayout
-            brandLabel={BRAND_LABEL}
-            menuItems={leftMenuItems}
-            pageTitleMap={pageTitleMap}
-            mode={mode}
-            onToggleMode={onToggleMode}
-          />
-        }
-      >
-        {leftMenuRoutes.map((route) => (
-          <Route
-            key={route.path}
-            path={route.path}
-            element={renderRouteElement(route, ability, isLoggedIn, forbiddenPath)}
-          />
-        ))}
-      </Route>
-
-      <Route
-        element={
-          <HeaderFooterLayout
-            brandLabel={BRAND_LABEL}
-            navItems={headerNavItems}
-            pageTitleMap={pageTitleMap}
-            mode={mode}
-            onToggleMode={onToggleMode}
-          />
-        }
-      >
-        {headerFooterRoutes.map((route) => (
-          <Route
-            key={route.path}
-            path={route.path}
-            element={renderRouteElement(route, ability, isLoggedIn, forbiddenPath)}
-          />
-        ))}
-      </Route>
-
-      <Route element={<BlankLayout />}>
-        {blankRoutes.map((route) => (
-          <Route
-            key={route.path}
-            path={route.path}
-            element={renderRouteElement(route, ability, isLoggedIn, forbiddenPath)}
-          />
-        ))}
-      </Route>
+      {routes.map((route) => (
+        <Route
+          key={`${route.path}:${route.kind || 'page'}`}
+          path={route.path}
+          element={renderRouteElement(route, ability, isLoggedIn, forbiddenPath, layoutContext)}
+        />
+      ))}
 
       {!hasNotFoundWildcard && <Route path="*" element={<Navigate to={fallbackPath} replace />} />}
     </Routes>

@@ -11,7 +11,7 @@ export default function DefaultPage({
 }) {
   return (
     <Grid container spacing={2.25}>
-      <Grid item xs={12}>
+      <Grid size={12}>
         <AppBox title={title} subtitle={subtitle}>
           <Typography color="text.secondary">
             Use this page as a base screen for API-loaded modules.
@@ -19,7 +19,7 @@ export default function DefaultPage({
         </AppBox>
       </Grid>
 
-      <Grid item xs={12} md={4}>
+      <Grid size={{ xs: 12, md: 4 }}>
         <AppCard
           title="Status"
           subtitle="Page state"
@@ -28,7 +28,7 @@ export default function DefaultPage({
           icon={<CheckCircleRoundedIcon />}
         />
       </Grid>
-      <Grid item xs={12} md={4}>
+      <Grid size={{ xs: 12, md: 4 }}>
         <AppCard
           title="Data"
           subtitle="Records loaded"
@@ -36,7 +36,7 @@ export default function DefaultPage({
           trend={4}
         />
       </Grid>
-      <Grid item xs={12} md={4}>
+      <Grid size={{ xs: 12, md: 4 }}>
         <AppCard
           title="Response"
           subtitle="Average time"

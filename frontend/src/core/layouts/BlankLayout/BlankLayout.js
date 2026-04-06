@@ -1,6 +1,6 @@
 import React from 'react';
 import { Outlet } from 'react-router-dom';
 
-export default function BlankLayout() {
-  return <Outlet />;
+export default function BlankLayout({ children }) {
+  return children || <Outlet />;
 }

@@ -7,7 +7,7 @@ import { AppBox, AppCard } from '@core/components';
 export default function Category1Page() {
   return (
     <Grid container spacing={2.25}>
-      <Grid item xs={12}>
+      <Grid size={12}>
         <AppBox
           title="Category 1"
           subtitle="Parent level route meta drives inherited layout, permissions, and left menu defaults."
@@ -19,13 +19,13 @@ export default function Category1Page() {
           </Typography>
         </AppBox>
       </Grid>
-      <Grid item xs={12} md={4}>
+      <Grid size={{ xs: 12, md: 4 }}>
         <AppCard title="Layer Permission" subtitle="Defined in category1/index.js" value="category1:read" />
       </Grid>
-      <Grid item xs={12} md={4}>
+      <Grid size={{ xs: 12, md: 4 }}>
         <AppCard title="Menu Icon" subtitle="Inherited to child routes" value="Folder icon" />
       </Grid>
-      <Grid item xs={12} md={4}>
+      <Grid size={{ xs: 12, md: 4 }}>
         <AppCard title="Menu Order" subtitle="Controlled at layer level" value="100" />
       </Grid>
     </Grid>

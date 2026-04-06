@@ -14,12 +14,21 @@ import ListItem from '@mui/material/ListItem';
 import ListItemButton from '@mui/material/ListItemButton';
 import ListItemIcon from '@mui/material/ListItemIcon';
 import ListItemText from '@mui/material/ListItemText';
+import Popover from '@mui/material/Popover';
 import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
 import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
-import { getLeftMenuItemSx } from './subcomponents/menuSx';
+import { APP_CONFIG } from '../../../Config';
+import {
+  collapsedFlyoutPaperSx,
+  collapsedIconRowSx,
+  collapsedMenuLabelSx,
+  getCollapsedChevronSx,
+  getCollapsedFlyoutItemSx,
+  getLeftMenuItemSx
+} from './subcomponents/menuSx';
 
 const DRAWER_PAPER_SX = (drawerWidth) => ({
   width: drawerWidth,
@@ -79,6 +88,24 @@ function collectAutoExpandedNodeMap(items, pathname) {
   return expandedMap;
 }
 
+function findNodeByKey(nodes = [], nodeKey) {
+  for (const node of nodes) {
+    if (node.key === nodeKey) {
+      return node;
+    }
+
+    if (node.children?.length) {
+      const foundNode = findNodeByKey(node.children, nodeKey);
+
+      if (foundNode) {
+        return foundNode;
+      }
+    }
+  }
+
+  return null;
+}
+
 function LeftMenuContent({
   brandLabel,
   items,
@@ -89,12 +116,19 @@ function LeftMenuContent({
   onToggleDesktop,
   onCloseMobile
 }) {
-  const compactBrandLabel = brandLabel ? brandLabel.trim().charAt(0).toUpperCase() : 'R';
+  const compactBrandLabel = brandLabel
+    ? brandLabel.trim().charAt(0).toUpperCase()
+    : APP_CONFIG.LEFT_MENU_COMPACT_FALLBACK;
+
   const autoExpandedNodeMap = React.useMemo(
     () => collectAutoExpandedNodeMap(items, pathname),
     [items, pathname]
   );
+
   const [expandedNodeMap, setExpandedNodeMap] = React.useState({});
+
+  // Cascading flyouts: each level contains a node whose children are rendered in that popover.
+  const [flyoutLevels, setFlyoutLevels] = React.useState([]);
 
   React.useEffect(() => {
     setExpandedNodeMap((currentMap) => ({
@@ -102,6 +136,20 @@ function LeftMenuContent({
       ...currentMap
     }));
   }, [autoExpandedNodeMap]);
+
+  const closeFlyouts = React.useCallback(() => {
+    setFlyoutLevels([]);
+  }, []);
+
+  React.useEffect(() => {
+    if (!collapsed) {
+      closeFlyouts();
+    }
+  }, [collapsed, closeFlyouts]);
+
+  React.useEffect(() => {
+    closeFlyouts();
+  }, [pathname, closeFlyouts]);
 
   const handleToggleNode = React.useCallback(
     (nodeKey) => {
@@ -116,6 +164,30 @@ function LeftMenuContent({
     },
     [autoExpandedNodeMap]
   );
+
+  const openRootFlyout = React.useCallback((nodeKey, anchorEl) => {
+    setFlyoutLevels((currentLevels) => {
+      if (currentLevels.length === 1 && currentLevels[0].nodeKey === nodeKey) {
+        return [];
+      }
+
+      return [{ nodeKey, anchorEl }];
+    });
+  }, []);
+
+  const openChildFlyout = React.useCallback((parentLevelIndex, nodeKey, anchorEl) => {
+    setFlyoutLevels((currentLevels) => {
+      const nextLevels = currentLevels.slice(0, parentLevelIndex + 1);
+      const nextLevel = { nodeKey, anchorEl };
+      nextLevels.push(nextLevel);
+
+      return nextLevels;
+    });
+  }, []);
+
+  const trimFlyoutsAfterLevel = React.useCallback((levelIndex) => {
+    setFlyoutLevels((currentLevels) => currentLevels.slice(0, levelIndex + 1));
+  }, []);
 
   const renderMenuNodes = (nodes, depth = 0) => (
     nodes.map((node) => {
@@ -132,7 +204,12 @@ function LeftMenuContent({
       const isExpanded = !collapsed && (expandedNodeMap[node.key] ?? autoExpandedNodeMap[node.key] ?? false);
       const MenuIcon = node.icon;
 
-      const handleItemClick = () => {
+      const handleItemClick = (event) => {
+        if (collapsed && hasChildren) {
+          openRootFlyout(node.key, event.currentTarget);
+          return;
+        }
+
         if (node.path) {
           onNavigate(node.path);
           return;
@@ -151,20 +228,46 @@ function LeftMenuContent({
                 ...getLeftMenuItemSx(isActive, collapsed),
                 pl: collapsed ? 1 : (1.5 + depth * 1.5)
               }}
-              onClick={handleItemClick}
+              onClick={(event) => handleItemClick(event)}
+              onMouseEnter={(event) => {
+                if (collapsed && hasChildren) {
+                  setFlyoutLevels([{ nodeKey: node.key, anchorEl: event.currentTarget }]);
+                }
+              }}
             >
-              {MenuIcon && (
-                <ListItemIcon>
-                  <MenuIcon fontSize="small" />
-                </ListItemIcon>
+              {collapsed ? (
+                <>
+                  <Box sx={collapsedIconRowSx}>
+                    {MenuIcon && (
+                      <MenuIcon
+                        fontSize="small"
+                        sx={{ color: isActive ? 'common.white' : 'text.secondary' }}
+                      />
+                    )}
+                    {hasChildren && <ChevronRightRoundedIcon sx={getCollapsedChevronSx(isActive)} />}
+                  </Box>
+                  <ListItemText primary={node.label} sx={collapsedMenuLabelSx} />
+                </>
+              ) : (
+                <>
+                  {MenuIcon && (
+                    <ListItemIcon>
+                      <MenuIcon fontSize="small" />
+                    </ListItemIcon>
+                  )}
+                  <ListItemText
+                    primary={node.label}
+                    primaryTypographyProps={{
+                      variant: 'body2',
+                      sx: {
+                        fontWeight: isActive ? 700 : 600,
+                        lineHeight: 1.2
+                      }
+                    }}
+                  />
+                </>
               )}
-              <ListItemText
-                primary={node.label}
-                sx={{
-                  opacity: collapsed ? 0 : 1,
-                  display: collapsed ? 'none' : 'block'
-                }}
-              />
+
               {hasChildren && !collapsed && (
                 <IconButton
                   size="small"
@@ -195,6 +298,76 @@ function LeftMenuContent({
       );
     })
   );
+
+  const renderFlyoutLevel = (level, levelIndex) => {
+    const currentNode = findNodeByKey(items, level.nodeKey);
+    const nodes = currentNode?.children || [];
+
+    return (
+      <Popover
+        key={`flyout-level-${levelIndex}-${level.nodeKey}`}
+        open={Boolean(level.anchorEl && nodes.length)}
+        anchorEl={level.anchorEl}
+        onClose={closeFlyouts}
+        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+        transformOrigin={{ vertical: 'top', horizontal: 'left' }}
+        PaperProps={{
+          elevation: 8,
+          sx: collapsedFlyoutPaperSx
+        }}
+        sx={{
+          zIndex: (theme) => theme.zIndex.drawer + 3 + levelIndex
+        }}
+      >
+        <Box sx={{ px: 0.6, pb: 0.8 }}>
+          <Typography variant="subtitle2" sx={{ fontWeight: 700, px: 0.9, py: 0.4 }}>
+            {currentNode?.label || ''}
+          </Typography>
+        </Box>
+        <List disablePadding>
+          {nodes.map((node) => {
+            const hasChildren = Boolean(node.children?.length);
+            const isActive = isPathActive(pathname, node.path) || doesNodeContainActivePath(node, pathname);
+
+            return (
+              <ListItem key={`flyout-${levelIndex}-${node.key}`} disablePadding>
+                <ListItemButton
+                  onClick={(event) => {
+                    if (hasChildren) {
+                      openChildFlyout(levelIndex, node.key, event.currentTarget);
+                      return;
+                    }
+
+                    if (node.path) {
+                      onNavigate(node.path);
+                      closeFlyouts();
+                    }
+                  }}
+                  onMouseEnter={(event) => {
+                    if (hasChildren) {
+                      openChildFlyout(levelIndex, node.key, event.currentTarget);
+                    } else {
+                      trimFlyoutsAfterLevel(levelIndex);
+                    }
+                  }}
+                  sx={getCollapsedFlyoutItemSx(isActive)}
+                >
+                  <Typography
+                    variant="body1"
+                    color={isActive ? 'text.primary' : 'text.secondary'}
+                    sx={{ fontWeight: isActive ? 700 : 500 }}
+                  >
+                    {node.label}
+                  </Typography>
+                  {hasChildren && <ChevronRightRoundedIcon fontSize="small" color="action" />}
+                </ListItemButton>
+              </ListItem>
+            );
+          })}
+        </List>
+      </Popover>
+    );
+  };
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
@@ -232,9 +405,11 @@ function LeftMenuContent({
         </Typography>
       </Box>
       <Divider />
-      <List sx={{ px: 1.5, py: 1.5 }}>
+      <List variant={collapsed ? 'left-menu-collapsed' : 'left-menu'}>
         {renderMenuNodes(items)}
       </List>
+
+      {collapsed && flyoutLevels.map((level, levelIndex) => renderFlyoutLevel(level, levelIndex))}
     </Box>
   );
 }
