@@ -1,5 +1,3 @@
-export { default as AppHeader } from './AppHeader';
-export { default as AppLeftMenu } from './AppLeftMenu';
 export { default as AppCard } from './AppCard';
 export { default as AppBox } from './AppBox';
 export { default as Spinner } from './Spinner';
